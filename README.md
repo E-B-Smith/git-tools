@@ -52,9 +52,7 @@ PATH=/Users/Edward/Development/git-tools:"$PATH"
 
 ## Git Project Scripts
 
-I tend to work on a number of projects at once during the day, for instance I might change
-some server code, tweak a micro-service, and then update an iOS app to be compatible
-with the other changes.
+I tend to work on a number of projects at once during the day. For instance I might change some server code, tweak a micro-service, and then update an iOS app to be compatible with these changes.
 
 At the beginning of the day I like to pull all the new changes to the projects from other
 team members and at night push all my changes upstream. It's handy update all my projects
@@ -66,8 +64,8 @@ I wrote some git project scripts to help with this work flow.
 
 | Script                | Description |
 |:----------------------|:------------|
-| git-project-pull      | Pull all projects in your ~/.git-projects file. |
-| git-project-push      | Push all dirty projects in your ~/.git-projects file. |
+| git-project-pull      | Pull all projects in your ~/.git-projects file from their remotes. |
+| git-project-push      | Push all dirty projects in your ~/.git-projects file to their remotes. |
 | git-project-status    | Displays the status of your projects. Alternately adds projects to track. |
 
 Each of these scripts supports the `-h` help option that shows usage details.
@@ -89,7 +87,7 @@ Be patient: scanning a directory for git projects may take some time.
 
 You only need to add your projects once.  The projects that are tracked are saved in a
 config file called `~/.git-projects`. You can add or remove projects by editing this file
-or re-running the `git-project-status` command.
+or re-running the `git-project-status -a` command.
 
 ### Daily Tasks
 
@@ -107,8 +105,7 @@ Push your updates to the remote with the `git-project-push` command:
 
 #### git-project-status
 
-You can check the status of your projects without updating anything by using the
-`git-project-status` command used without the `-a` option:
+You can check the status of your projects without updating anything by using the `git-project-status` command used without the `-a` option:
 
 ![git-project-status2-example](images/git-project-status2.png)
 
