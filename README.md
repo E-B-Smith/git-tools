@@ -2,8 +2,8 @@
 
 <h1>
 git-tools
-<span style="position:relative;top:-0.5em;float:right">
-<img alt="Git" style="height:2em;" src="https://git-scm.com/images/logo@2x.png">
+<span style="position:relative;top:-0.3em;float:right">
+<img alt="Git" height="42" src="https://git-scm.com/images/logo@2x.png">
 </span>
 </h1>
 <br>
