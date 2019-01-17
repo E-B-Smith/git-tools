@@ -46,6 +46,8 @@ PATH=/Users/Edward/Development/git-tools:"$PATH"
 
 ## Git Project Scripts
 
+I use these scripts a lot.
+
 I tend to work on a number of projects at once during the day. For instance I might change some server code, tweak a micro-service, and then update an iOS app to be compatible with these changes.
 
 At the beginning of the day I like to pull all the new changes to the projects from other
