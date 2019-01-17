@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+#   resolvepath  -  Resolve any sym links in a path.
+#
+#   Usage: resolvepath <pathname>
+#
+#   Returns:  A pathname without any sym links.
+#
+#   If there is an error the script exits code 1, else the resolved pathname is printed to
+#   stdout and the script exits code 0.
+#
+#   E.B. Smith  -  December 2013
+
+pathname="${1:-.}"
+if [ -L "${pathname}" ]
+then
+    pathname=$(readlink "${pathname}")
+fi
+
+filename=""
+if [[ ! -e "${pathname}" ]] || [[ -f "${pathname}" ]]
+then
+    filename=$(basename "${pathname}")
+    pathname=$(dirname "${pathname}")
+fi
+
+if cd "${pathname}"
+then
+    pathname=$(pwd -P)
+    if (( ${#filename} != 0 ))
+    then
+        echo "${pathname}"/"${filename}"
+    else
+        echo "${pathname}"
+    fi
+else
+    exit 1
+fi

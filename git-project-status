@@ -1,0 +1,258 @@
+#!/bin/bash
+
+#  git-project-status  -  E.B.Smith, December 2013
+
+set -eu -o pipefail
+IFS=$'\n'
+scriptname=git-project-status
+
+function usage() {
+cat 1>&2 <<USAGE
+$scriptname
+
+   Reports the git status projects in the ~/.git-projects file.
+
+Usage:  $scriptname  [ -ahrs ] <directory-to-scan>...
+
+Options:
+
+ -a  Scan for newly added projects.
+ -h  Print this usage help.
+ -r  Delete and rebuild the ~/.git-projects config file.
+ -s  Run silent.
+
+Exits code 1 if any project is dirty, 0 otherwise.
+
+USAGE
+}
+
+
+configfile=~/.git-projects
+export debugging=false
+
+
+temppath=$(mktemp -dt "$scriptname.XXXXXXXXXX")
+# echo "temppath: $temppath"
+mkdir -p "${temppath}"
+tempfile1="${temppath}"/temp1.txt
+tempfile2="${temppath}"/temp2.txt
+tempfile3="${temppath}"/temp3.txt
+tempfile4="${temppath}"/temp4.txt
+tempfile5="${temppath}"/temp5.txt
+
+function cleanUpOnExit() {
+    if $debugging; then
+        open "${temppath}"
+        edit "${configfile}"
+    else
+        if [ "${temppath}" != "" ]; then
+            rm -Rf "${temppath}"
+            fi
+        fi
+}
+trap "cleanUpOnExit" EXIT
+
+
+if [[ ${CLICOLOR:-0} == 1 && -t 1 ]]
+then
+    textBlue="\e[94m"
+    textDarkBlue="\e[1m\e[34m"
+    textRed="\e[31m"
+    textNormal="\e[0m"
+else
+    textBlue=""
+    textDarkBlue=""
+    textRed=""
+    textNormal=""
+fi
+
+
+function askWriteLine() {
+    local lastpreference="$1"
+    local lastfilename="$2"
+
+    if [[ "${lastpreference}" == "A" ]]
+    then
+        if askYN "Track '$lastfilename'?" </dev/tty >/dev/tty
+        then
+            echo "Y:$lastfilename"
+        else
+            echo "N:$lastfilename"
+        fi
+    else
+        echo "$lastpreference:$lastfilename" >> "${tempfile5}"
+    fi
+}
+
+function scanGitPath() {
+    local gitbasepath
+    gitbasepath=$(resolvepath "$1")
+
+    touch "${tempfile1}"  "${tempfile2}"  "${tempfile3}" "${tempfile4}"  "${tempfile5}"
+    echo "Scanning ${gitbasepath}..." 1>&2
+    (find -L "${gitbasepath}" -name .Trash -prune -o -name .git -print > "${tempfile1}" 2> /dev/null || true)
+    sort -u < "${tempfile1}" > "${tempfile2}"
+    while read -r newline
+    do
+        echo "A:""${newline}" >> "${tempfile3}"
+    done < "${tempfile2}"
+
+    if [ -f "${configfile}" ]
+    then
+        sort --key=1.3  "${tempfile3}"  "${configfile}" > "${tempfile4}"
+    else
+        cat "${tempfile3}" > "${tempfile4}"
+    fi
+
+    local lastfilename=""
+    local lastpreference=""
+    while read -r nextline
+    do {
+        nextpreference=${nextline%%:*}
+        nextfilename="${nextline#*:}"
+
+        if [[ "${lastfilename}" == "" ]]; then
+            lastfilename="${nextfilename}"
+            lastpreference=A
+            fi
+
+        if [[ "${nextfilename}" != "${lastfilename}" ]]; then
+            askWriteLine "$lastpreference" "$lastfilename" >> "${tempfile5}"
+            lastfilename="${nextfilename}"
+            lastpreference="${nextpreference}"
+        else
+            if [[ "${nextpreference}" != "A" ]]; then
+                lastpreference=$nextpreference
+                fi
+            fi
+    }
+    done < "${tempfile4}"
+
+    if [[ "${lastfilename}" != "" ]]
+    then
+        askWriteLine "$lastpreference" "$lastfilename" >> "${tempfile5}"
+    fi
+
+    mv -f "${tempfile5}" "${configfile}"
+}
+
+userpathlen=~
+userpathlen=$((${#userpathlen}+1))
+function leftTruncatePath() {
+    local maxlength=$1
+    local string="$2"
+
+    string="${string:$userpathlen}"
+    local length=${#string}
+    if (( length <= maxlength ))
+    then
+        printf "%s" "${string}"
+    else
+        string="${string:(- $((maxlength-3)))}"
+        printf "...%s" "${string}"
+    fi
+}
+
+totalProjectCount=0
+trackedProjectCount=0
+dirtyProjectCount=0
+function reportGitProjects() {
+    while read -r nextline
+    do {
+        (( totalProjectCount++ )) || true
+        local nextpref="${nextline%%:*}"
+        local nextpath="${nextline#*:}"
+
+        if [[ "$nextpref" = "Y" ]]; then
+            (( trackedProjectCount++ )) || true
+            if [ -d "${nextpath}" ]
+            then
+                # echo "Checking $nextpath."
+                cd "$(dirname "${nextpath}")"
+                status="$(git status -sb)"
+                if (( $(wc -l <<< "${status}") != 1 ))
+                then
+                    (( dirtyProjectCount++ )) || true
+                fi
+                path=$(leftTruncatePath 46 "$(pwd)")
+                printf "~/%-46s ${textBlue}%s${textNormal}\n" "${path}" "${status}" 1>&3
+            else
+                printf "${textRed}>>> No path for %s.${textNormal}\n" "${nextpath}" 1>&3
+            fi
+        fi
+    } </dev/null
+    done < "${configfile}"
+}
+
+
+# Parse arguments --
+
+bAddProjects=false
+bRebuildConfig=false
+bSilent=false
+gitbasepath=~
+
+while getopts ":ahrs" option
+do
+    case "$option" in
+    a)  bAddProjects=true ;;
+    h)  usage; exit 0 ;;
+    r)  bRebuildConfig=true ;;
+    s)  bSilent=true
+        bRebuildConfig=false
+        ;;
+    ?)  echo "Unknown option '-$OPTARG'." 1>&2 ; exit 1;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if $bSilent
+then
+    exec 3> /dev/null
+else
+    exec 3>&1
+fi
+
+if $bRebuildConfig
+then
+    echo "Rebuilding project configuration file." 1>&2
+    rm -f "${configfile}"
+fi
+
+if [ ! -f "${configfile}" ]
+then
+    bAddProjects=true
+fi
+
+if [ -n "${1:-}" ]
+then
+    bAddProjects=true
+fi
+
+if [[ $bAddProjects == true && $bSilent == false ]]
+then
+    if [[ -z "${1:-}" ]]
+    then
+        scanGitPath ~
+    else
+        while [ -n "${1:-}" ]
+        do
+            scanGitPath "${1}"
+            shift
+        done
+    fi
+fi
+
+printf "${textDarkBlue}Project status:${textNormal}\n" 1>&3
+
+reportGitProjects
+
+printf "${textDarkBlue}Found $totalProjectCount projects, tracking $trackedProjectCount projects, $dirtyProjectCount projects dirty.${textNormal}\n" 1>&3
+
+if (( dirtyProjectCount > 0 ))
+then
+    exit 1
+else
+    exit 0
+fi

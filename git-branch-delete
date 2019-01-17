@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+# E.B.Smith, June 2017  -  Delete a git branch locally and upstream.
+
+branch_name="$1"
+git checkout master
+(git push origin --delete "$branch_name" || true)
+git branch -D "$branch_name"

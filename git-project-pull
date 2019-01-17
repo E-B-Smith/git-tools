@@ -1,0 +1,165 @@
+#!/bin/bash
+
+#  project-pull  -  E.B.Smith, December 2013
+
+set -euo pipefail
+IFS=$'\n'
+scriptname=project-pull
+
+function usage() {
+cat 1>&2 <<USAGE
+$scriptname
+
+   Pulls the current project branch of each track project in the ~/.git-projects file.
+
+Usage:  $scriptname  [ -h ] [ <branch> ]
+
+   The '-h' option shows this help text and exits.
+
+   If branch <branch> exists, pulls the named branch, otherwise pulls the current branch.
+
+   Exit code 1 if a project was updated, 0 otherwise.
+
+USAGE
+}
+
+
+configfile=~/.git-projects
+export debugging=false
+bSilent=false
+newbranch=""
+
+
+if [[ ${CLICOLOR:-0} == 1 && -t 1 ]]
+then
+    textBlue="\e[94m"
+    textLightBlue="\e[36m"
+    textDarkBlue="\e[1m\e[34m"
+    textRed="\e[31m"
+    textNormal="\e[0m"
+else
+    textBlue=""
+    textLightBlue=""
+    textDarkBlue=""
+    textRed=""
+    textNormal=""
+fi
+
+
+userpathlen=~
+userpathlen=$((${#userpathlen}+1))
+function leftTruncatePath() {
+    local maxlength=$1
+    local string="$2"
+
+    string="${string:$userpathlen}"
+    local length=${#string}
+    if (( length <= maxlength ))
+    then
+        printf "%s" "${string}"
+    else
+        string="${string:(- $((maxlength-3)))}"
+        printf "...%s" "${string}"
+    fi
+}
+
+totalProjectCount=0
+trackedProjectCount=0
+dirtyProjectCount=0
+
+
+function pullGitProjectGuts() {
+    local status
+    status=$(git status -sb)
+    local path
+    path=$(leftTruncatePath 46 "$(pwd)")
+    local currentbranch
+    currentbranch="$(git status -sb)"
+    currentbranch="${currentbranch#*...}"
+    # echo "Current branch: $currentbranch"
+    printf "${textLightBlue}~/%-46s ${textBlue}%s${textNormal}\n" "${path}" "${status}" 1>&3
+    local changes
+    local result
+    set +e
+    changes=$(git fetch origin 2>&1)
+    result=$?
+    set -e
+    if  (( result == 0 ))
+    then
+        changes=$(git -c color.ui=always merge --no-edit FETCH_HEAD 2>&1 || true)
+        if [[ "$changes" != *"Already up"* ]]
+        then
+            (( dirtyProjectCount++ )) || true
+            printf "${textNormal}%s\n" "$changes" 1>&3
+        fi
+        #(git clean -df || true)
+        if (( ${#newbranch} != 0 ))
+        then
+            if [[ "$currentbranch" != "$newbranch" ]] && [[ -n $(git branch -a --list "*${newbranch}*") ]]
+            then
+                git checkout "$newbranch"
+            fi
+        fi
+    else
+        printf "${textRed}>>> Warning: Can't pull path %s.${textNormal}\n" "$(pwd)" 1>&3
+    fi
+}
+
+
+function pullGitProjects() {
+    while read -r nextline
+    do {
+        (( totalProjectCount++ )) || true
+        local nextpref="${nextline%%:*}"
+        local nextpath="${nextline#*:}"
+
+        if [[ "$nextpref" = "Y" ]]
+        then
+            (( trackedProjectCount++ )) || true
+            if [ -d "${nextpath}" ]
+            then
+               cd "$(dirname "${nextpath}")"
+               pullGitProjectGuts
+            else
+                printf "${textRed}>>> No path for %s.${textNormal}\n" "${nextpath}" 1>&3
+            fi
+        fi
+    } </dev/null
+    done < "${configfile}"
+}
+
+
+# Parse arguments --
+
+if (( $# != 0 ))
+then
+    case $1 in
+    "-h")  usage; exit 0 ;;
+    *)   newbranch="$1" ;;
+    esac
+    shift
+fi
+
+if (( $# != 0 ))
+then
+    echo ">>> Error: Stray command line argument '$1'." 1>&2
+    exit 1
+fi
+
+if $bSilent
+then
+    exec 3> /dev/null
+else
+    exec 3>&1
+fi
+
+pullGitProjects
+
+printf "${textDarkBlue}Found $totalProjectCount projects, pulled $trackedProjectCount projects, $dirtyProjectCount projects updated.${textNormal}\n" 1>&3
+
+if (( dirtyProjectCount > 0 ))
+then
+    exit 1
+else
+    exit 0
+fi

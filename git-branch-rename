@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+
+# EB Smith, June 2017  -  Rename current git branch.
+
+new_branch="$1"
+old_branch=$(git rev-parse --abbrev-ref HEAD)
+
+git branch -m "$old_branch" "$new_branch"        # Rename branch locally
+git push origin :"$old_branch"                   # Delete the old branch
+git push --set-upstream origin "$new_branch"     # Push the new branch, set local branch to track the new remote

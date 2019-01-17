@@ -1,0 +1,37 @@
+# Standard .gitignore file.
+
+#  Mac
+.DS_Store
+.LSOverride
+
+#  Subversion / CVS
+.svn
+CVS
+
+#  Eclipse
+.classpath
+.project
+.settings/
+
+#  Xcode
+xcuserdata
+*.xccheckout
+[Bb]uild
+*.o
+
+#  Maven
+[Tt]arget
+
+#  IntelliJ
+*.iml
+.idea
+
+#  App Specific
+*.log
+*.lock
+*.pid
+
+#  iphone-image maker
+iPhone-Images
+iPhone-AppIcons
+iPhone-LaunchImages
