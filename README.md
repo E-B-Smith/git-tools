@@ -1,12 +1,6 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/hyperium/hyper/master/LICENSE)
 
-<h1>
-git-tools
-<span style="position:relative;top:-0.3em;float:right">
-<img alt="Git" height="42" src="https://git-scm.com/images/logo@2x.png">
-</span>
-</h1>
-<br>
+# git-tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img alt="Git" height="42" align="top" src="https://git-scm.com/images/logo@2x.png">
 
 Here are some handy command line scripts I frequently use when working with git.
 
