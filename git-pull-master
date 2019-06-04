@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eu o pipefail
+
+# git-pull-master
+# EB Smith, June 2019
+
+current_branch="$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)"
+git checkout master
+git pull origin master
+git checkout "$current_branch"
