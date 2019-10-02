@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+# git-branch-unset-track
+
+branch_name="$1"
+git branch -d -r origin/"$branch_name"
+git config --unset branch."$branch_name".remote
+git config --unset branch."$branch_name".merge
