@@ -12,28 +12,48 @@ set -euo pipefail
 #
 #   E.B. Smith  -  December 2013
 
-pathname="${1:-.}"
-if [ -L "${pathname}" ]
-then
-    pathname=$(readlink "${pathname}")
-fi
+function absolute_path() {
+    local pathname="${1:-.}"
+    local filename=""
+    local original_path
+    original_path="$(pwd)"
+    while ! cd "$pathname" 2>/dev/null
+    do
+        filename="$(basename "$pathname")"/"$filename"
+        pathname="$(dirname "$pathname")"
+    done
+    pathname="$(pwd)"
+    cd "$original_path" || true
+    pathname="$pathname/$filename"
+    pathname="${pathname%%/}"
+    echo "$pathname"
+}
 
-filename=""
-if [[ ! -e "${pathname}" ]] || [[ -f "${pathname}" ]]
-then
-    filename=$(basename "${pathname}")
-    pathname=$(dirname "${pathname}")
-fi
+absolute_path "${1:-.}"
 
-if cd "${pathname}"
-then
-    pathname=$(pwd -P)
-    if (( ${#filename} != 0 ))
-    then
-        echo "${pathname}"/"${filename}"
-    else
-        echo "${pathname}"
-    fi
-else
-    exit 1
-fi
+exit 0
+
+# Tests:
+
+absolute_path /etc # /etc
+absolute_path ~/Foo/foo.txt
+absolute_path ~/Foo # works
+absolute_path .
+absolute_path ./
+absolute_path ../
+absolute_path ..
+absolute_path /
+absolute_path ~
+absolute_path ~/
+absolute_path ~/Documents
+absolute_path /\"\ \'
+absolute_path /etc/../etc/
+absolute_path /private//etc/
+absolute_path /private//
+absolute_path //private # //private
+absolute_path ./aa.txt
+absolute_path aa.tar.gz
+absolute_path .aa.txt
+absolute_path /.DS_Store
+absolute_path ~/Documents/Books/
+absolute_path
