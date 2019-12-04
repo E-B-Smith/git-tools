@@ -1,5 +1,5 @@
 #!/bin/bash
 set -euo pipefail
 tag_name="$1"
-git push --delete origin "$tag_name"
-git tag -d "$tag_name"
+git push --delete origin "$tag_name" || true
+git tag -d "$tag_name" || true
