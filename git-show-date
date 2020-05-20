@@ -16,12 +16,14 @@ USAGE
 
 function show_date() {
     local blob="$1"
-    git show --pretty="tformat:%ai    %an    %s" --quiet "$blob"
+    local pretty_blob
+    pretty_blob="$(printf "%-25.25s" "$blob")"
+    git show --pretty="tformat:%<(25)%ai $pretty_blob %<(20,trunc)%an %s" --quiet "$blob"
 }
 
 if (( $# == 0 ))
 then
-    show_date "."
+    show_date "$(git rev-parse --abbrev-ref HEAD)"
     exit 0
 fi
 
