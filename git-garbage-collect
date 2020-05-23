@@ -1,0 +1,83 @@
+#!/bin/bash
+set -euo pipefail
+function show_usage() {
+cat <<USAGE
+Usage:  git-garbage-collect  [ -hi ]
+
+    Cleans and garbage collects your local git repo.
+
+Options:
+
+    -h  Show this help and exit.
+    -i  Interactive mode. Ask before removing orphan files.
+
+Discusion:
+
+After regular use your local git repo gets full of dangling references, old tags, and orphan files,
+all of which can take up extra space and slow down git operations.
+
+This script cleans these up. Run it occasionally, especially after a large change has been made
+to the repo, such as a Carthage SDK update.
+
+USAGE
+}
+
+interactive_mode=false
+while getopts ":hi" option
+do
+    case "$option" in
+    h)  show_usage
+        exit 0
+        ;;
+    i)  interactive_mode=true
+        ;;
+    *)  echo ">>> Error: Unknown option '$OPTARG'." 1>&2
+        exit 1
+        ;;
+    esac
+done
+
+if ! top_level="$(git rev-parse --show-toplevel)"
+then
+    echo ">>> Error: This script must be run from in your local git directory." 1>&2
+    exit 1
+fi
+cd "$top_level"
+
+# Make sure the current git repo is clean:
+if [ -n "$(git status --porcelain)" ]
+then
+    echo ">>> Error: Please commit your changes before continuing." 1>&2
+    exit 1
+fi
+
+# Remove old tags:
+git fetch --prune origin '+refs/tags/*:refs/tags/*'
+
+# Remove old local branches:
+git branch --merged=master | grep -v master | xargs git branch -d || true
+
+# Remove old remote branches:
+git fetch --prune
+
+# Remove orphaned files and directories:
+if $interactive_mode
+then
+    clean_count=$(git clean -dxn | wc -l)
+    if (( $clean_count > 0 ))
+    then
+        git clean -dxn
+        if ./tools/scripts/askYN "Remove these files?"
+        then
+            git clean -dxf
+        fi
+    fi
+else
+    git clean -dxf
+fi
+
+# Do this twice to get rid of any dangling refs after the first time:
+git gc
+git prune
+git gc
+git prune
