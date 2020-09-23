@@ -8,6 +8,8 @@ echo ">>> Pruning old branches..."
 git fetch --prune
 git checkout -q master
 
+# Comment out the staging branch stuff:
+cat > /dev/null <<COMMENT
 # Delete all the merged staging branches:
 git branch --merged staging |
 while read -r branch
@@ -23,6 +25,7 @@ do
     # echo ">>> Deleting merged branch '$branch'."
     git branch -d "$branch"
 done
+COMMENT
 
 # Ask to delete all the remote-gone local branches:
 while read -r -u 3 branch
