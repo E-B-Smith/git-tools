@@ -9,7 +9,14 @@ then
     exit 0
 fi
 
-git checkout master
+if  git show-ref --verify --quiet "refs/heads/main"
+then
+    git checkout main
+elif git show-ref --verify --quiet "refs/heads/master"
+then
+    git checkout master
+fi
+
 while (( $# > 0 ))
 do
     branch_name="$1"
