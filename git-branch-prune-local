@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+
+# Delete local branches when the upstream is gone.
+#
+# https://www.erikschierboom.com/2020/02/17/cleaning-up-local-git-branches-deleted-on-a-remote/
+
+script_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+askyn="$script_path/askYN"
+
+git fetch --prune
+
+IFS=$'\n'
+branches="$(
+    git for-each-ref --format '%(refname:short) %(upstream:track)' refs/heads |
+        awk '$2 == "[gone]" {print $1}'
+)"
+
+for branch in $branches
+do
+    if $askyn "Delete ${branch}?"
+    then
+        git branch -D "$branch"
+    fi
+done
