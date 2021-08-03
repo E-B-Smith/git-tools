@@ -1,20 +1,41 @@
 #!/bin/bash
 set -euo pipefail
+function show_help() {
+    cat <<HELP
+Usage:      git-branch-prune-local  [ -h ]
 
-# Delete local branches when the upstream is gone.
-#
-# https://www.erikschierboom.com/2020/02/17/cleaning-up-local-git-branches-deleted-on-a-remote/
+    Delete local branches where the upstream branch is gone.
+
+Options:
+
+    -h      Print this help text and exit.
+
+HELP
+}
+
+if (( $# == 1 )) && [[ "$1" == "-h" ]]
+then
+    show_help
+    exit 0
+fi
+if (( $# != 0 ))
+then
+    echo 1>&2 "Error: Invalid option. Try '-h'."
+    exit 1
+fi
 
 script_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 askyn="$script_path/askYN"
 
+IFS=$'\n'
 git fetch --prune
 
-IFS=$'\n'
-branches="$(
-    git for-each-ref --format '%(refname:short) %(upstream:track)' refs/heads |
-        awk '$2 == "[gone]" {print $1}'
-)"
+# branches="$(
+#     git for-each-ref --format '%(refname:short) %(upstream:track)' refs/heads |
+#         awk '$2 == "[gone]" {print $1}'
+# )"
+
+branches="$( git branch -vv | grep ': gone]' | awk '{print $1}' )"
 
 for branch in $branches
 do
