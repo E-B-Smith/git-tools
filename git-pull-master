@@ -5,6 +5,16 @@ set -eu o pipefail
 # EB Smith, June 2019
 
 current_branch="$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)"
-git checkout master
-git pull origin master
+branch="master"
+if [ -z "$(git branch --list $branch)" ]
+then
+    branch="main"
+fi
+if [ -z "$(git branch --list $branch)" ]
+then
+    echo 1>&2 ">>> Error: Can't find main/master."
+    exit 1
+fi
+git checkout "$branch"
+git pull origin "$branch"
 git checkout "$current_branch"
