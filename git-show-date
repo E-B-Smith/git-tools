@@ -19,9 +19,8 @@ USAGE
 # https://coderwall.com/p/7fp5dg/finding-git-branches-which-contain-the-specified-commit
 
 function show_date() {
-    local blob="$1"
-    local pretty_blob
-    pretty_blob="${blob#remotes/}"
+    local blob; blob="$1"
+    local pretty_blob; pretty_blob="${blob#remotes/}"
     pretty_blob="${pretty_blob#origin/}"
     pretty_blob="$(printf "%-35.35s" "$pretty_blob")"
     git show --pretty="tformat:%<(25)%ai $pretty_blob %<(20,trunc)%an %s" --quiet "$blob"
