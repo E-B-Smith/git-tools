@@ -2,12 +2,13 @@
 set -euo pipefail
 function show_usage() {
     cat <<USAGE
-git-show-date
+git-branch-show
 
     Shows a git blob date.
 
-Usage:      git-show-date [ -h ] | [ <blob> ]
+Usage:      git-show-date [ -ah ] | [ <blob> ]
 
+    -a      Show all local branches.
     -h      Show this help and exit.
     <blob>  The git blob to show the date.
 
@@ -32,9 +33,15 @@ then
     exit 0
 fi
 
+script_name="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"/"$(basename "${BASH_SOURCE[0]}")"
+
 if [ "$1" = "-h" ]
 then
     show_usage
+    exit 0
+elif [ "$1" = "-a" ]
+then
+    git branch | sed -e 's/*//g' | xargs "$script_name" | sort
     exit 0
 fi
 

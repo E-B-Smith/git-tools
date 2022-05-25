@@ -36,6 +36,7 @@ PATH=/Users/Edward/Development/git-tools:"$PATH"
 | git-branch-delete     | Deletes a local and remote branch. |
 | git-branch-make       | Creates a local branch and pushes it to the remote. |
 | git-branch-rename     | Renames a local and remote branch. |
+| git-branch-show       | Shows brief details about the current branch or blob. |
 | git-completion.bash   | A git completion script for bash/zsh. The installation instructions are in the comments in the header of the file. |
 | git-graph             | Outputs a nifty graph of the project branch history. |
 | git-prune-local       | Prunes your local repo of merged and deleted branches. |
