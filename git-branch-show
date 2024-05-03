@@ -41,7 +41,7 @@ then
     exit 0
 elif [ "$1" = "-a" ]
 then
-    git branch | sed -e 's/*//g' | xargs "$script_name" | sort
+    git for-each-ref --format='%(refname:short)' refs/heads/ | xargs "$script_name" | sort
     exit 0
 fi
 

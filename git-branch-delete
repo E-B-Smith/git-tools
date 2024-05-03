@@ -25,9 +25,9 @@ do
         branch_name="${branch_name#remotes/origin/}"
     fi
     printf "Branch: %s\n" "$branch_name"
-    if [[ "$branch_name" == "master" ]]
+    if [[ "$branch_name" == "master" ]] || [[ "$branch_name" == "main" ]]
     then
-        printf "Can't delete the master branch." 1>&2
+        printf "Can't delete master or main branches." 1>&2
         exit 1
     fi
     (git push origin --delete "$branch_name" || true)

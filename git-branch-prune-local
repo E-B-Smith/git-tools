@@ -1,4 +1,5 @@
 #!/bin/bash
+{
 set -euo pipefail
 function show_help() {
     cat <<HELP
@@ -23,17 +24,41 @@ then
     echo 1>&2 "Error: Invalid option. Try '-h'."
     exit 1
 fi
+if [ -n "$(git status --porcelain)" ]
+then
+    echo ">>> Error: Please commit changes first." 1>&2
+    exit 1
+fi
 
-script_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-askyn="$script_path/askYN"
+current_branch="$(git symbolic-ref -q HEAD)"
+current_branch="${current_branch##refs/heads/}"
+current_branch="${current_branch:-HEAD}"
+
+function clean_up() {
+    if [ "$current_branch" != "HEAD" ] && git show-ref --quiet refs/heads/"$current_branch"
+    then
+        git checkout "$current_branch" &>/dev/null
+    fi
+}
+trap clean_up EXIT
+
+branch=master
+if ! git show-ref --quiet refs/heads/$branch
+then
+    branch=main
+    if ! git show-ref --quiet refs/heads/$branch
+    then
+        echo ">>> Error: main or master?" 1>&2
+        exit 1
+    fi
+fi
+git checkout "$branch" &>/dev/null
 
 IFS=$'\n'
 git fetch --prune
 
-# branches="$(
-#     git for-each-ref --format '%(refname:short) %(upstream:track)' refs/heads |
-#         awk '$2 == "[gone]" {print $1}'
-# )"
+script_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+askyn="$script_path/askYN"
 
 branches="$( git branch -vv | grep ': gone]' | awk '{print $1}' )"
 
@@ -44,3 +69,6 @@ do
         git branch -D "$branch"
     fi
 done
+
+exit 0
+}
