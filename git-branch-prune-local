@@ -48,14 +48,14 @@ then
     branch=main
     if ! git show-ref --quiet refs/heads/$branch
     then
-        echo ">>> Error: main or master?" 1>&2
+        echo ">>> Error: Can't switch to main or master?" 1>&2
         exit 1
     fi
 fi
 git checkout "$branch" &>/dev/null
 
 IFS=$'\n'
-git fetch --prune
+git fetch --prune --prune-tags --force
 
 script_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 askyn="$script_path/askYN"
