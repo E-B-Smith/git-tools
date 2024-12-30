@@ -55,6 +55,7 @@ fi
 git checkout "$branch" &>/dev/null
 
 IFS=$'\n'
+# git remote prune origin # Only useful if origin is different than the 'fetch' below:
 git fetch --prune --prune-tags --force
 
 script_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
