@@ -2,16 +2,15 @@
 set -euo pipefail
 function show_usage() {
     cat <<USAGE
-git-branch-show
+git-show-summary
 
-    Shows a git blob date.
+    Shows a git blob summary including date, hash, author, and commit title.
 
-Usage:      git-show-date [ -ah ] | [ <blob> ]
+Usage:      git-show-summary [ -ah ] | [ <blob> ]
 
     -a      Show all local branches.
     -h      Show this help and exit.
-    <blob>  The git blob to show the date.
-
+    <blob>  The git blob to show.
 USAGE
 }
 
@@ -23,25 +22,26 @@ function show_date() {
     local blob; blob="$1"
     local pretty_blob; pretty_blob="${blob#remotes/}"
     pretty_blob="${pretty_blob#origin/}"
-    pretty_blob="$(printf "%-35.35s" "$pretty_blob")"
-    git show --pretty="tformat:%<(25)%ai $pretty_blob %<(20,trunc)%an %s" --quiet "$blob"
+    pretty_blob="$(printf "%-35.35s" "${pretty_blob}")"
+    git show --pretty="tformat:%<(25)%ai ${pretty_blob} %<(20,trunc)%an %s" --quiet "${blob}"
 }
 
 if (( $# == 0 ))
 then
-    show_date "$(git rev-parse --abbrev-ref HEAD)"
+    hash="$(git rev-parse --abbrev-ref HEAD)"
+    show_date "${hash}"
     exit 0
 fi
 
 script_name="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"/"$(basename "${BASH_SOURCE[0]}")"
 
-if [ "$1" = "-h" ]
+if [[ "$1" = "-h" ]]
 then
     show_usage
     exit 0
-elif [ "$1" = "-a" ]
+elif [[ "$1" = "-a" ]]
 then
-    git for-each-ref --format='%(refname:short)' refs/heads/ | xargs "$script_name" | sort
+    git for-each-ref --format='%(refname:short)' refs/heads/ | xargs "${script_name}" | sort
     exit 0
 fi
 
